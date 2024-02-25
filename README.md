@@ -6,7 +6,7 @@
 
 **Overview:**
 
-This bot enables crawling Twitter data without using the Twitter API. It redirects all toots through the Telegram_Bot and Mastodon_Bot modules. In Telegram, there's the option to filter by keywords like specific lines or locations. Additionally, there's a Control-Bot to control the Telegram bot, allowing for the creation of chat IDs and filter terms, and to be operated by the user.
+This bot enables crawling Twitter data without using the Twitter API. It send all tweets to the Telegram_Bot and Mastodon_Bot module. In Telegram, there's the option to filter by keywords like specific lines or locations. Additionally, there's a Control-Bot to control the Telegram bot, allowing for the creation of chat IDs and filter terms, and to be operated by the user.
 
 **Instructions:**
 
