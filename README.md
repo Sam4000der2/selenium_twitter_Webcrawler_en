@@ -3,7 +3,12 @@
 ***[ZUR DEUTSCHEN VERSION](https://github.com/Sam4000der2/selenium_twitter_Webcrawler_de)***
 
 ---
+**Attention:**
+The Selenium module does not seem to support snap packages, please refrain from using the Ubuntu distribution in combination with the project. The distributions Mint and Debian should work. I have not tested the use of flatpak for Firefox in combination with the project.
 
+Chrome also works with Selenium, but the link seems to be more buggy.
+
+---
 **Overview:**
 
 This bot enables crawling Twitter data without using the Twitter API. It send all tweets to the Telegram_Bot and Mastodon_Bot module. In Telegram, there's the option to filter by keywords like specific lines or locations. Additionally, there's a Control-Bot to control the Telegram bot, allowing for the creation of chat IDs and filter terms, and to be operated by the user.
