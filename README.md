@@ -3,7 +3,8 @@
 ***[ZUR DEUTSCHEN VERSION](https://github.com/Sam4000der2/selenium_twitter_Webcrawler_de)***
 
 ---
-**Attention:**
+***Attention:***
+
 The Selenium module does not seem to support snap packages, please refrain from using the Ubuntu distribution in combination with the project. The distributions Mint and Debian should work. I have not tested the use of flatpak for Firefox in combination with the project.
 
 Chrome also works with Selenium, but the link seems to be more buggy.
