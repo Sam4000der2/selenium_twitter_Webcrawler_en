@@ -69,10 +69,13 @@ async def main(new_tweets):
             if not keywords:
                 await send_telegram_message(bot, chat_id, message)
             else:
+                keywordincontent = False
                 for keyword in keywords:
                     if keyword in content:  # Check whether the keyword is included
-                        await send_telegram_message(bot, chat_id, message)
-                        #await send_telegram_picture(bot, chat_id, images)
+                        keywordincontent = True
+                if keywordincontent:
+                    await send_telegram_message(bot, chat_id, message)
+                    #await send_telegram_picture(bot, chat_id, images)
         
 
 if __name__ == '__main__':
