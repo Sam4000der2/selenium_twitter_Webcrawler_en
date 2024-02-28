@@ -9,7 +9,7 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from dateutil.parser import parse
 
-#Zum aufrufen von nicht öffentlich sichtbaren Twitterseiten werden die gespeicherten Cookies von der Twitteranmeldung benötigt. Natürlich Optional
+#To call up non-publicly visible Twitter pages, the saved cookies from the Twitter login are required. Optional, of course
 firefox_profile_path = "C:\\Users\\YOUR_USER\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\YOUR_PROFILE.default-release"
 #firefox_profile_path = "/home/YOUR_USER/.mozilla/firefox/YOUR_PROFILE.default-release"
 
@@ -18,21 +18,21 @@ twitter_link = "https://twitter.com/i/lists/1741534129215172901"
 #filename = "existing_tweets.txt"
 
 firefox_options = Options()
-firefox_options.headless = True   # Öffnet den Browser sichtbar für den Benutzer
+firefox_options.headless = True   # Opens the browser invisibly for the user
 
-#Falls du ohne einloggen Twitter crawlen willst, bitte ausklammern:
+#If you want to crawl Twitter without logging in, please exclude it:
 firefox_profile = webdriver.FirefoxProfile(firefox_profile_path)
 firefox_options.profile = firefox_profile
 
 
-# Konfiguriere das Logging
+# Configure the logging
 logging.basicConfig(filename='twitter_bot.log', level=logging.ERROR)
 
-#selenium erzeugt andauernd eine Arbeitskopie des Firefox Profils, die Funktion löscht diese wieder. Sonst wird der Speicherplatz schnell knapp.
-#Falls ohne Einloggen bei Twitter gearbeitet werden will, kann diese Funktion samt Profil Option ausgeklammert werden.
+#selenium constantly creates a working copy of the Firefox profile, the function deletes this again. Otherwise the storage space will quickly run out.
+#If you want to work on Twitter without logging in, this function and the profile option can be disabled.
 def delete_temp_files():
     try:
-        # Überprüfe temporäre Dateien in /tmp und /var/tmp
+        # Check temporary files in /tmp and /var/tmp
         for temp_dir in ['/tmp', '/var/tmp']:
             for root, dirs, files in os.walk(temp_dir):
                 for name in files:
@@ -51,8 +51,8 @@ def find_all_tweets(driver):
         for i, tweet in enumerate(tweets):
             tweet_parts = tweet.text.split("\n")
             
-            user = tweet_parts[0]  # Der Benutzername ist der erste Teil des ersten Zeileninhalts
-            username = tweet_parts[1]  # Der User ist der erste Teil des Benutzernamens
+            user = tweet_parts[0]  # The user name is the first part of the first line content
+            username = tweet_parts[1]  # The user is the first part of the user name
 
             content_element = tweet.find_element(By.CSS_SELECTOR, 'div[lang]')
             content = content_element.text
@@ -65,23 +65,68 @@ def find_all_tweets(driver):
             
             timestamp = tweet.find_element(By.TAG_NAME, "time").get_attribute("datetime")
             
-            posted_time = parse(timestamp).isoformat()
-            
+            # Parse timestamp
+            posted_time_utc = parse(timestamp)
+
+            # Check whether daylight saving time is currently in effect
+            is_dst = bool(datetime.datetime.now().astimezone().dst())
+
+            # Set local time zone (here as an example Berlin)
+            local_timezone = datetime.timezone(datetime.timedelta(hours=2 if is_dst else 1))  # MESZ (UTC+2) oder MEZ (UTC+1)
+
+            # Convert timestamp to local time zone
+            posted_time_local = posted_time_utc.astimezone(local_timezone)
+
+            # Define desired format for date and time
+            desired_format = "%d.%m.%Y %H:%M"
+
+            # Output timestamp in the desired format
+            posted_time = posted_time_local.strftime(desired_format)
+                       
             image_element = tweet.find_elements(By.CSS_SELECTOR,'div[data-testid="tweetPhoto"]')
             images = []
+            
             for image_div in image_element:
                 href = image_div.find_element(By.TAG_NAME,
                                               "img").get_attribute("src")
                 images.append(href)
                 href = href.replace("&name=small", "")
         
+            extern_url_elements = tweet.find_elements(By.CSS_SELECTOR, '[data-testid="card.wrapper"]')
+            extern_urls = []
+            for extern_url_element in extern_url_elements:
+                href_0 = extern_url_element.find_element(By.TAG_NAME, 'a')
+                href = href_0.get_attribute("href")
+                extern_urls.append(href)
+            
+            # Regular expression to recognise URLs
+            url_pattern = re.compile(r"https?://\S+")
+            content = url_pattern.sub('', content)
+            
+            url_pattern = re.compile(r"http?://\S+")
+            content = url_pattern.sub('', content)
+            
+            if not images:
+                images_as_string = ""
+            else:
+                images_as_string = str(images).replace("[]", "").replace("'", "")
+                
+            if not extern_urls:
+                extern_urls_as_string = ""
+            else:
+                extern_urls_as_string = str(extern_urls).replace("[]", "").replace("'", "")
+
+            
             tweet_data.append({
                 "user": user,
                 "username": username,
                 "content": content,
                 "posted_time": posted_time,
                 "var_href": var_href,
-                "images": images
+                "images": images,
+                "extern_urls": extern_urls,
+                "images_as_string": images_as_string,
+                "extern_urls_as_string": extern_urls_as_string
             })
            
  
