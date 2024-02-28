@@ -137,17 +137,17 @@ def find_all_tweets(driver):
 
 def check_and_write_tweets(tweet_data):
     try:
-        #Überprüfe, ob die Datei existiert und lese vorhandene Tweets
+        #Check if the file exists and read existing tweets
         if not os.path.exists(filename):
-            # Wenn die Datei nicht existiert, erstelle sie
-            open(filename, "a").close()  # Erstelle die Datei, falls sie nicht existiert
+            # If the file does not exist, create it
+            open(filename, "a").close()  # Create the file if it does not exist
 
-       # Öffne die Datei im Lese-Modus, um vorhandene Links zu überprüfen
+       # Open the file in read mode to check existing links
         with open(filename, "r") as file:
             existing_tweets = file.read().splitlines()
 
         new_tweets = []
-        # Überprüfe jeden Tweet in den Daten
+        # Check every tweet in the data
         for n, tweet in enumerate(tweet_data, start=1):
             user = tweet['user']
             username = tweet['username']
@@ -155,9 +155,12 @@ def check_and_write_tweets(tweet_data):
             posted_time = tweet['posted_time']
             var_href = tweet['var_href']
             images = tweet['images']
+            extern_urls = tweet['extern_urls']
+            images_as_string = tweet['images_as_string']
+            extern_urls_as_string = tweet['extern_urls_as_string']
 
 
-            # Überprüfe, ob der Link bereits in den vorhandenen Tweets enthalten ist
+            # Check whether the link is already included in the existing tweets
             if var_href not in existing_tweets:
                 new_tweets.append({
                     "user": user,
@@ -165,10 +168,13 @@ def check_and_write_tweets(tweet_data):
                     "content": content,
                     "posted_time": posted_time,
                     "var_href": var_href,
-                    "images": images
+                    "images": images,
+                    "extern_urls": extern_urls,
+                    "images_as_string": images_as_string,
+                    "extern_urls_as_string": extern_urls_as_string
                 })
 
-                # Wenn nicht, schreibe den Link in die Datei
+                # If not, write the link in the file
                 with open(filename, "a") as file:
                     file.write(var_href + "\n")
 
@@ -180,15 +186,15 @@ def check_and_write_tweets(tweet_data):
 
 def trim_existing_tweets_file():
     try:
-        # Öffne die Datei im Lese-Modus, um die Anzahl der Zeilen zu überprüfen
+        # Open the file in read mode to check the number of lines
         with open(filename, "r") as file:
             lines = file.readlines()
         
-        # Überprüfe die Anzahl der Zeilen
+        # Check the number of lines
         num_lines = len(lines)
         
         if num_lines > 100:
-            # Wenn mehr als 100 Zeilen vorhanden sind, lösche die ältesten 50 Zeilen
+            # If there are more than 100 lines, delete the oldest 50 lines
             with open(filename, "w") as file:
                 file.writelines(lines[50:])
             
@@ -202,7 +208,7 @@ def trim_existing_tweets_file():
 async def main():
     while True:
         try:
-            #Falls du ohne einloggen Twitter crawlen willst:
+            #If you want to crawl Twitter without logging in:
             #driver = webdriver.Firefox(options=firefox_options)
             
             driver = webdriver.Firefox(options=firefox_options, firefox_profile=firefox_profile_path)
@@ -212,27 +218,27 @@ async def main():
 
             #print(new_tweets)
 
-            # Aufruf der Funktion in telegram_bot.py
+            # Call the function in telegram_bot.py
             await telegram_bot.main(new_tweets)
 
-            # Aufruf der Funktion in mastodon_bot.py
+            # Call the function in mastodon_bot.py
             mastodon_bot.main(new_tweets)
 
-            # Browser schließen
+            # Close browser
             driver.quit()
 
             trim_existing_tweets_file()
 
-            #Falls du ohne einloggen Twitter crawlen willst, brauchst du die nicht mehr
+            #If you want to crawl Twitter without logging in, you no longer need them
             delete_temp_files()
 
-            # Wartezeit, bevor die nächste Iteration beginnt
-            await asyncio.sleep(60)   # Wartezeit in Sekunden (hier: 1 Minuten)
+            # Waiting time before the next iteration begins
+            await asyncio.sleep(60)   # Waiting time in seconds (here: 1 minute)
 
         except Exception as e:
             logging.error(f"An error occurred: {e}")
-            # Fehlerbehandlung, z.B. Neustart des Browsers oder Wartezeit vor erneutem Versuch
-            time.sleep(60)  # Wartezeit vor erneutem Versuch in Sekunden (hier: 1 Minute)
+            # Error handling, e.g. restarting the browser or waiting time before trying again
+            time.sleep(60)  # Waiting time before retrying in seconds (here: 1 minute)
         
         
 if __name__ == '__main__':
@@ -241,4 +247,4 @@ if __name__ == '__main__':
 
 
 
-#Weitere css Selektoren findet ihr hier: https://github.com/shaikhsajid1111/twitter-scraper-selenium/blob/main/twitter_scraper_selenium/element_finder.py
+#You can find more css selectors here: https://github.com/shaikhsajid1111/twitter-scraper-selenium/blob/main/twitter_scraper_selenium/element_finder.py
