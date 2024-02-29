@@ -73,4 +73,52 @@ WantedBy=multi-user.target
 
 **Step 9:** Congratulations, the bot should now be running.
 
+**Step 10:** Create a RAM Disk if Desired
+
+A RAM disk can be used for temporary files in `/tmp` and `/var/tmp` to increase speed and preserve the hard disk/SSD/memory card. Especially since the bug with continuous copying of the Firefox profile has not yet been resolved.
+
+**Step 11:** Determine RAM Disk Size
+
+Decide how much space you want to allocate to the RAM disk. In this example, we use 1 1/2 GB each for `/tmp` and `/var/tmp`.
+
+**Step 12:** Set Up RAM Disk
+
+Open a terminal and execute the following commands:
+
+```bash
+sudo mount -t tmpfs -o size=1536M tmpfs /tmp
+sudo mount -t tmpfs -o size=1536M tmpfs /var/tmp
+```
+
+This creates separate RAM disks for `/tmp` and `/var/tmp`, each with a size of 1 1/2 GB.
+
+**Step 13:** Automatically Mount the RAM Disks
+
+To ensure that the RAM disks are automatically mounted at startup, edit the `/etc/fstab` file:
+
+```bash
+sudo nano /etc/fstab
+```
+
+Add the following lines at the end of the file:
+
+```
+tmpfs   /tmp   tmpfs   size=1536M   0   0
+tmpfs   /var/tmp   tmpfs   size=1536M   0   0
+```
+
+Save and close the file.
+
+**Step 14:** Restart the System
+
+Restart your system to apply the changes:
+
+```bash
+sudo reboot
+```
+
+After these steps, separate RAM disks for `/tmp` and `/var/tmp`, each with a size of 1 1/2 GB, should be set up and automatically mounted at system startup.
+
+---
+
 Many thanks to [https://github.com/shaikhsajid1111/twitter-scraper-selenium/blob/main/twitter_scraper_selenium/element_finder.py](https://github.com/shaikhsajid1111/twitter-scraper-selenium/blob/main/twitter_scraper_selenium/element_finder.py), thanks to this project I got the CSS sectors to get the tweets. The project is suitable as a complete solution for beginners who only want to crawl profiles. However, these are often no longer sorted chronologically. That's why my approach with the Twitter lists and more freedom for the Twitter pages.
