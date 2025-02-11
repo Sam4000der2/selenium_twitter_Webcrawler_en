@@ -1,124 +1,180 @@
-**Selenium Twitter Webcrawler - English Version**
+# Selenium Twitter Webcrawler – English Version
 
-***[ZUR DEUTSCHEN VERSION](https://github.com/Sam4000der2/selenium_twitter_Webcrawler_de)***
-
----
-***Attention:***
-
-The Selenium module does not seem to support snap packages, please refrain from using the Ubuntu distribution in combination with the project. The distributions Mint and Debian should work. I have not tested the use of flatpak for Firefox in combination with the project.
-
-Chrome also works with Selenium, but the link seems to be more buggy.
-
----
-**Overview:**
-
-This bot enables crawling Twitter data without using the Twitter API. It send all tweets to the Telegram_Bot and Mastodon_Bot module. In Telegram, there's the option to filter by keywords like specific lines or locations. Additionally, there's a Control-Bot to control the Telegram bot, allowing for the creation of chat IDs and filter terms, and to be operated by the user.
-
-**Instructions:**
-
-**Step 1:** Install Python with pip.
-
-**Step 2:** Install the following modules with pip: selenium, mastodon.py, and python-telegram-bot.
-
-**Step 3A:** If you want to crawl Twitter data without logging in, make the following changes in the file `twitter_bot.py`:
-
-- Comment out `firefox_profile = webdriver.FirefoxProfile(firefox_profile_path)`.
-- Comment out `firefox_options.profile = firefox_profile`.
-- In the `def main()` function: Uncomment `driver = webdriver.Firefox(options=firefox_options)`.
-- Comment out `driver = webdriver.Firefox(options=firefox_options, firefox_profile=firefox_profile_path)`.
-- Also, comment out `delete_temp_files()`, as it's likely no longer needed.
-
-**Step 3B:** If you want to access non-public Twitter pages, such as chronologically sorted lists, adjust the `firefox_profile_path` in the `twitter_bot.py` file. You can find your profile name from your current profile under `about:profiles`.
-
-**Step 4:** Add the desired Twitter page whose tweets you want to crawl in `twitter_bot.py` and comment out unnecessary modules:
-
-- If you don't need the Telegram bot, comment out `await telegram_bot.main(new_tweets)` in the `def main()`.
-- If you don't need the Telegram bot, comment out `mastodon_bot.main(new_tweets)` in the `def main()`.
-
-**Step 5:** Add API keys to the Telegram bots and the Mastodon bot:
-
-- For Telegram, get the API keys from the account https://t.me/BotFather, where you can also set up your bots.
-- For Mastodon, get the API key under `your_instance.example_social/settings/applications` (in the settings menu under Development). Don't forget to assign appropriate permissions; otherwise, you'll quickly get a 403 error. You'll need to regenerate the API key for any changes to the assigned permissions. Also, don't forget to enter your instance into the script.
-
-**Step 6:** Test run the bot in the bot's folder: `python twitter_bot.py`.
-
-- Ideally, the selenium module will automatically install the appropriate Geckodriver for Firefox.
-- If not: Download the appropriate Geckodriver version (x64: [https://github.com/mozilla/geckodriver/releases](https://github.com/mozilla/geckodriver/releases) or arm: [https://github.com/jamesmortensen/geckodriver-arm-binaries/releases](https://github.com/jamesmortensen/geckodriver-arm-binaries/releases)). Unpack the Geckodriver and copy it from the open folder using the command `sudo cp geckodriver /usr/local/bin/geckodriver` to the appropriate folder.
-
-**Step 7:** If you're using the Telegram bot, also add the API key in `telegram_controll_bot.py`. It's best to use an absolute path instead of `DATA_FILE = 'data.json'` for your bot folder, and don't forget to change this in `telegram_bot.py` as well.
-
-**Step 8:** Set up the bots as services, so they can run permanently in the background.
-
-- `sudo nano /etc/systemd/system/twitter_bot.service`
-
-```plaintext
-[Unit]
-Description=twitter_bot
-After=network.target
-
-[Service]
-WorkingDirectory=/[Path to your bot folder]
-ExecStart=python twitter_bot.py
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
-
-- `sudo systemctl daemon-reload`
-- `sudo systemctl start twitter_bot.service`
-- `sudo systemctl enable twitter_bot.service`
-- Do the same with the `telegram_controll_bot`.
-
-**Step 9:** Congratulations, the bot should now be running.
-
-**Step 10:** Create a RAM Disk if Desired
-
-A RAM disk can be used for temporary files in `/tmp` and `/var/tmp` to increase speed and preserve the hard disk/SSD/memory card. Especially since the bug with continuous copying of the Firefox profile has not yet been resolved.
-
-**Step 11:** Determine RAM Disk Size
-
-Decide how much space you want to allocate to the RAM disk. In this example, we use 1 1/2 GB each for `/tmp` and `/var/tmp`.
-
-**Step 12:** Set Up RAM Disk
-
-Open a terminal and execute the following commands:
-
-```bash
-sudo mount -t tmpfs -o size=1536M tmpfs /tmp
-sudo mount -t tmpfs -o size=1536M tmpfs /var/tmp
-```
-
-This creates separate RAM disks for `/tmp` and `/var/tmp`, each with a size of 1 1/2 GB.
-
-**Step 13:** Automatically Mount the RAM Disks
-
-To ensure that the RAM disks are automatically mounted at startup, edit the `/etc/fstab` file:
-
-```bash
-sudo nano /etc/fstab
-```
-
-Add the following lines at the end of the file:
-
-```
-tmpfs   /tmp   tmpfs   size=1536M   0   0
-tmpfs   /var/tmp   tmpfs   size=1536M   0   0
-```
-
-Save and close the file.
-
-**Step 14:** Restart the System
-
-Restart your system to apply the changes:
-
-```bash
-sudo reboot
-```
-
-After these steps, separate RAM disks for `/tmp` and `/var/tmp`, each with a size of 1 1/2 GB, should be set up and automatically mounted at system startup.
+[**To the German Version**](https://github.com/Sam4000der2/selenium_twitter_Webcrawler_de)
 
 ---
 
-Many thanks to [https://github.com/shaikhsajid1111/twitter-scraper-selenium/blob/main/twitter_scraper_selenium/element_finder.py](https://github.com/shaikhsajid1111/twitter-scraper-selenium/blob/main/twitter_scraper_selenium/element_finder.py), thanks to this project I got the CSS sectors to get the tweets. The project is suitable as a complete solution for beginners who only want to crawl profiles. However, these are often no longer sorted chronologically. That's why my approach with the Twitter lists and more freedom for the Twitter pages.
+## Important Notes
+
+- **Snap Packages:**  
+  Selenium does not seem to support Snap packages. Therefore, **do not** use the Ubuntu distribution in combination with this project – Mint and Debian have proven to work well.
+
+- **Firefox via Flatpak:**  
+  Using Firefox via Flatpak has not been tested with this project.
+
+- **Google Chrome:**  
+  Chrome generally works with Selenium, but its integration may be less stable.
+
+- **Twitter Login:**  
+  To use Twitter lists, you must be logged in. Lists are the only reliably chronological views. The best approach is to log in to Twitter with a new profile in Firefox and then copy this profile to the target server (including Raspberry Pi, etc.). Adjust the profile path accordingly in the script. You can find your Firefox profile by navigating to `about:profiles`. The bot can also work without login, but in that case, the page must be publicly accessible without authentication.
+
+---
+
+## Overview
+
+This project enables Twitter data crawling **without** using the official Twitter API. All retrieved tweets are automatically forwarded through two modules:
+
+- **Telegram Bot:**  
+  With optional filtering (e.g., by specific keywords, lines, or locations).
+
+- **Mastodon Bot:**  
+  Simple forwarding of tweets to Mastodon.
+
+Additionally, there is a **Control Bot** for Telegram, allowing you to manage chat IDs, filter terms, and control the bot.
+
+---
+
+## Installation & Configuration
+
+### Requirements
+
+- **Python** (including pip)
+- The following Python modules (installable via pip):
+  - See requirements.txt
+
+### Step-by-Step Guide
+
+#### 1. Install Python and Required Modules
+
+Ensure Python and pip are installed. Then, install the required modules:
+```bash
+pip install -r requirements.txt
+```
+
+#### 2. Adjustments for Publicly Accessible Twitter Data (No Login)
+
+If you want to crawl Twitter data without logging in, make the following changes in the `twitter_bot.py` file:
+
+- **Comment out:**
+  ```python
+  # firefox_profile = webdriver.FirefoxProfile(firefox_profile_path)
+  # firefox_options.profile = firefox_profile
+  ```
+- **In the `def main()` function:**
+  - Uncomment:
+    ```python
+    driver = webdriver.Firefox(options=firefox_options)
+    ```
+  - Comment out:
+    ```python
+    # driver = webdriver.Firefox(options=firefox_options, firefox_profile=firefox_profile_path)
+    ```
+- **Additionally:**  
+  Comment out the `delete_temp_files()` function, as it is probably not needed in this mode.
+
+#### 3. Access to Non-Public Twitter Pages (e.g., Chronologically Sorted Lists)
+
+- Adjust the `firefox_profile_path` value in `twitter_bot.py` to access protected or personalized pages.
+- You can find your profile name under `about:profiles` in Firefox.
+
+#### 4. Target Pages and Module Selection
+
+- **Add Twitter Pages:**  
+  Enter the Twitter page you want to capture tweets from in `twitter_bot.py`.
+- **Disable Unnecessary Modules:**  
+  Comment out the calls to the Telegram or Mastodon bots in `def main()` if you do not need them:
+  ```python
+  # await telegram_bot.main(new_tweets)
+  # mastodon_bot.main(new_tweets)
+  ```
+
+#### 5. Set Up API Keys
+
+- **Telegram:**  
+  Get your API keys via [BotFather](https://t.me/BotFather) and enter them into the respective files.
+
+- **Mastodon:**  
+  The API key can be found in your instance's settings (under **Development**). Make sure the required permissions are granted – if changes are made, the API key must be regenerated. Also, specify your instance in the script. The Gemini API is used to generate free alt texts for images.
+
+- **Gemini API (For Testing Purposes):**  
+  Add your Gemini API key to your `~/.bashrc`. Open the file with:
+  ```bash
+  nano ~/.bashrc
+  ```
+  and add the line:
+  ```bash
+  export GOOGLE_API_KEY="YOURAPIKEY"
+  ```
+  You can get a free Gemini API key here: [Gemini API Key](https://aistudio.google.com/apikey).
+
+#### 6. Test Run of the Bot
+
+Run the bot in the appropriate directory for testing:
+```bash
+python twitter_bot.py
+```
+- **Note:**  
+  Selenium usually tries to install the correct Geckodriver for Firefox automatically. If this does not work, download the Geckodriver manually:
+  - **x64 & ARM:** [Geckodriver Releases](https://github.com/mozilla/geckodriver/releases)
+  
+  Extract Geckodriver and copy it to the system directory:
+  ```bash
+  sudo cp geckodriver /usr/local/bin/geckodriver
+  ```
+
+#### 7. Configure the Telegram Control Bot
+
+If using the Telegram bot, add your API key to `telegram_controll_bot.py`.  
+It is recommended to use an absolute path instead of `DATA_FILE = 'data.json'` – do not forget to apply this change in `telegram_bot.py` as well.
+
+#### 8. Set Up Bots as a Service
+
+To run the bot continuously in the background, set it up as a system service:
+
+1. Create a service file:
+   ```bash
+   sudo nano /etc/systemd/system/twitter_bot.service
+   ```
+2. Add the following content, adjusting `YOURUSER` and `YOURAPIKEY`:
+   ```ini
+   [Unit]
+   Description=twitter_bot
+   After=network.target
+
+   [Service]
+   Environment="GEMINI_API_KEY=YOURAPIKEY"
+   WorkingDirectory=/home/YOURUSER/bots
+   ExecStart=/home/YOURUSER/bots/venv/bin/python3 /home/YOURUSER/bots/twitter_bot.py
+   Restart=always
+   RestartSec=10
+   User=YOURUSER
+   Group=YOURUSER
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+3. Reload system services:
+   ```bash
+   sudo systemctl daemon-reload
+   ```
+4. Start and enable the service:
+   ```bash
+   sudo systemctl start twitter_bot.service
+   sudo systemctl enable twitter_bot.service
+   ```
+5. Set up `telegram_controll_bot` similarly.
+
+#### 9. Completion
+
+Congratulations – the bot should now be running successfully!
+
+---
+
+## Acknowledgment
+
+Special thanks to [shaikhsajid1111](https://github.com/shaikhsajid1111/twitter-scraper-selenium/blob/main/twitter_scraper_selenium/element_finder.py). This project helped me understand how to use CSS selectors to extract tweets. It is particularly useful for beginners who want to crawl profiles, even though chronological sorting is often no longer available. My approach using Twitter lists offers more flexibility.
+
+---
+
+Best of luck using the Selenium Twitter Webcrawler!
+
