@@ -1,87 +1,68 @@
-import asyncio
 import os
+import json
+import asyncio
 import telegram
 from telegram.ext import Updater
-import json
 
-# Telegram-Bot token
-bot_token = "API:TOKEN"
+admin_chat_id = "your_admin_chat_id"  # Customize if you want admin notifications
+bot_token = "API:TOKEN"  # Telegram bot token
+FILTER_DATA_FILE = 'data.json'  # File containing filter settings
 
-#The bot's users and their keywords are stored in the file. Recommend absolute paths.
-DATA_FILE = 'data.json'
-
-def load_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'r') as file:
-            return read_json_to_dict(file)
+def load_filter_data():
+    # Load filter data from JSON file. Customize the returned structure if needed.
+    if os.path.exists(FILTER_DATA_FILE):
+        with open(FILTER_DATA_FILE, 'r') as file:
+            return parse_filter_data(file)
     else:
-        return {"chat_id": {}, "keywords": {}}
+        return []  # default to empty list if file not found
 
-def read_json_to_dict(json_file):
-    data_dict = []
-    json_data = json_file.read()  # The content of the TextIOWrapper object is read here
+def parse_filter_data(json_file):
+    data_list = []
+    json_data = json_file.read()
     data = json.loads(json_data)
-
     chat_ids = data.get("chat_ids", {})
     filter_rules = data.get("filter_rules", {})
-
     for chat_id, keywords in filter_rules.items():
-        # Check whether the chat_id is present in chat_ids
         if chat_id in chat_ids:
             entry = {"chat_id": int(chat_id), "keywords": keywords}
-            data_dict.append(entry)
-
-    return data_dict
+            data_list.append(entry)
+    return data_list
 
 async def send_telegram_message(bot, chat_id, message):
     await bot.send_message(chat_id=chat_id, text=message)
     
-async def send_telegram_picture (bot, chat_id, images):
-    for image_url in images:
-        if image_url != "":
-            await bot.send_photo(chat_id, image_url)
-        
+async def send_telegram_picture(bot, chat_id, image_url):
+    if image_url:
+        await bot.send_photo(chat_id, image_url)
 
 async def main(new_tweets):
-    # Initialise the Telegram bot
     bot = telegram.Bot(token=bot_token)
-    my_filter = load_data()
+    filter_data = load_filter_data()
     
-    # Output of the tweet texts
-    for n, tweet in enumerate(new_tweets, start=1):
+    for tweet in new_tweets:
         user = tweet['user']
         username = tweet['username']
         content = tweet['content']
         posted_time = tweet['posted_time']
-        var_href = tweet['var_href']
+        source_url = tweet['var_href']  # renamed for clarity
         images = tweet['images']
-        extern_urls = tweet['extern_urls']
-        images_as_string = tweet['images_as_string']
-        extern_urls_as_string = tweet['extern_urls_as_string']
-        message = f"{username} has posted a new tweet\n"
-        message += f"{content}\n"
-        message += f"Tweeted from: {posted_time}\n"
-        message += f"Link to tweet: {var_href}\n"
-        message += f"\n\n{extern_urls_as_string}"
+        extern_urls_as_string = tweet.get('extern_urls_as_string', '')
+        message = (
+            f"{username} posted a new tweet:\n\n{content}\n\n"
+            f"Tweet time: {posted_time}\n\nLink: {source_url}\n\n{extern_urls_as_string}"
+        )
         message = message.replace('@', '#')
         
-        for entries in my_filter:
-            
-            chat_id = entries["chat_id"]
-            keywords = entries["keywords"]
-
-            if not keywords:
+        # Generic filtering logic: notify if no keywords defined or if any defined keyword is found.
+        for entry in filter_data:
+            chat_id = entry["chat_id"]
+            keywords = entry.get("keywords", [])
+            if not keywords or any(keyword in content for keyword in keywords):
                 await send_telegram_message(bot, chat_id, message)
-            else:
-                keywordincontent = False
-                for keyword in keywords:
-                    if keyword in content:  # Check whether the keyword is included
-                        keywordincontent = True
-                if keywordincontent:
-                    await send_telegram_message(bot, chat_id, message)
-                    #await send_telegram_picture(bot, chat_id, images)
-        
-
+                # Uncomment to send images as well:
+                # for image_url in images:
+                #     await send_telegram_picture(bot, chat_id, image_url)
+                
 if __name__ == '__main__':
-    #asyncio.run(main(tweet_data))
+    # This script is meant to be imported; do not run directly.
     print("This script should be imported and not run directly.")

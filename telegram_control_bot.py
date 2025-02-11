@@ -1,16 +1,15 @@
-import asyncio
 import os
 import json
+import asyncio
 import telegram
 from telegram.ext import Updater, CommandHandler, MessageHandler
+from datetime import datetime
 
-# Telegram secret access bot token
+# Telegram bot token and data file for chat IDs and filter rules
 BOT_TOKEN = "api:token"
-
-#The bot's users and their keywords are stored in the file. Recommend absolute paths.
 DATA_FILE = 'data.json'
+admin_id = 000000000  # Replace with your admin chat ID
 
-# Function for loading the data from the file
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, 'r') as file:
@@ -18,120 +17,87 @@ def load_data():
     else:
         return {"chat_ids": {}, "filter_rules": {}}
 
-# Function for saving the data to the file
 def save_data(data):
-    #Check if the file exists and read existing tweets
     if not os.path.exists(DATA_FILE):
-        # If the file does not exist, create it
-        open(DATA_FILE, "a").close()  # Create the file if it does not exist
-
+        open(DATA_FILE, "a").close()
     with open(DATA_FILE, 'w') as file:
         json.dump(data, file)
 
-# Function for loading the chat IDs from the data
 def load_chat_ids():
     data = load_data()
     return data["chat_ids"]
 
-# Function for saving the chat IDs in the data
 def save_chat_ids(chat_ids):
     data = load_data()
     data["chat_ids"] = chat_ids
     save_data(data)
 
-# Function for loading the filter rules from the data
 def load_filter_rules(chat_id):
     data = load_data()
     return data["filter_rules"].get(str(chat_id), [])
 
-# Function for saving the filter rules in the data
 def save_filter_rules(chat_id, filter_rules):
     data = load_data()
     data["filter_rules"][str(chat_id)] = filter_rules
     save_data(data)
 
-# Function for adding filter rules
 async def add_filter_rules(bot, message, chat_id):
-    rules = message.split()[1:]  # Extract filter rules from the message
+    rules = message.split()[1:]
     if not rules:
-        await add_exempel_command(bot, chat_id)
+        await send_add_example(bot, chat_id)
     else:
         filter_rules = load_filter_rules(chat_id)
-        new_rules = set(filter(lambda x: x.strip(), rules))
+        new_rules = set(rule.strip() for rule in rules if rule.strip())
         filter_rules.extend(new_rules)
         save_filter_rules(chat_id, filter_rules)
         await bot.send_message(chat_id=chat_id, text="Filter rules added.")
 
-# Function for deleting filter rules
 async def delete_filter_rules(bot, message, chat_id):
-    rules = message.split()[1:]  # Extract filter rules from the message
+    rules = message.split()[1:]
     if not rules:
-        await del_exempel_command(bot, chat_id)
+        await send_delete_example(bot, chat_id)
     else:
         filter_rules = load_filter_rules(chat_id)
-        to_remove = set(filter(lambda x: x.strip(), rules))
+        to_remove = set(rule.strip() for rule in rules if rule.strip())
         filter_rules = [rule for rule in filter_rules if rule not in to_remove]
         save_filter_rules(chat_id, filter_rules)
         await bot.send_message(chat_id=chat_id, text="Filter rules deleted.")
 
-# Function for deleting all filter rules
 async def delete_all_rules(bot, message, chat_id):
     save_filter_rules(chat_id, [])
     await bot.send_message(chat_id=chat_id, text="All filter rules deleted.")
 
-# Function for displaying all filter rules
-async def show_all_rules(bot,message, chat_id):
+async def show_all_rules(bot, message, chat_id):
     filter_rules = load_filter_rules(chat_id)
     if filter_rules:
-        await bot.send_message(chat_id=chat_id, text="Filter rules:\n" + '\n'.join(filter_rules))
+        await bot.send_message(chat_id=chat_id, text="Filter rules:\n" + "\n".join(filter_rules))
     else:
         await bot.send_message(chat_id=chat_id, text="No filter rules found.")
-        
-# Function for the /start command to save the chat ID
+
 async def start_command(bot, chat_id):
     chat_ids = load_chat_ids()
     if str(chat_id) not in chat_ids:
         chat_ids[str(chat_id)] = True
         save_chat_ids(chat_ids)
         await bot.send_message(chat_id=chat_id, text="Bot started. Welcome!")
-        
-        
-# Function for the /start command to save the chat ID
-async def add_example_command(bot, chat_id):
-    help_text = "Example of the function to add filter keywords:\n\n"
-    help_text += "/addfilterrules [your keyword]\n"
-    help_text += "/addfilterrules #S42\n"
-    help_text += "/addfilterrules Heerstr\n"
-    help_text += "/addfilterrules Alexanderplatz\n"
-    help_text += "/addfilterrules #M4_BVG\n"
-    help_text += "/addfilterrules #100_BVG\n"
-    help_text += "/addfilterrules #U1_BVG\n"
-    help_text += "\n"
-    help_text += "In this example, the bot forwards you all messages for the U1, 100 (Bus), M4 (Tram), and S42 lines. Also for Alexanderplatz and Heerstr.\n"
-    help_text += "\n"
-    help_text += "Note: This is a free text. As long as the keyword is included in the incoming tweets, you'll receive a message."
-    
-    await bot.send_message(chat_id=chat_id, text=help_text)
-    
-async def del_example_command(bot, chat_id):
-    help_text = "Example of the function to delete filter keywords:\n\n"
-    help_text += "/deletefilterrules [your keyword]\n"
-    help_text += "/deletefilterrules #S42\n"
-    help_text += "/deletefilterrules Heerstr\n"
-    help_text += "/deletefilterrules Alexanderplatz\n"
-    help_text += "/deletefilterrules #M4_BVG\n"
-    help_text += "/deletefilterrules #100_BVG\n"
-    help_text += "/deletefilterrules #U1_BVG\n"
-    help_text += "\n"
-    help_text += "In this example, the bot deletes the search terms for the U1, 100 (Bus), M4 (Tram), and S42 lines. Also for Alexanderplatz and Heerstr.\n"
-    help_text += "\n"
-    help_text += "This means you won't receive messages for the specific terms anymore. Pay attention to the spelling.\n"
-    help_text += "\n"
-    help_text += "If in doubt, use /showallrules to retrieve your existing filter terms. If no terms are set, you will continue to receive all messages."
-    
+
+async def send_add_example(bot, chat_id):
+    help_text = (
+        "Example for adding filter keywords:\n\n"
+        "/addfilterrules [your keyword]\n"
+        "You can add multiple keywords separated by spaces.\n"
+        "The bot will forward tweets containing any of these keywords."
+    )
     await bot.send_message(chat_id=chat_id, text=help_text)
 
-# Function for the /stop command to delete the chat ID
+async def send_delete_example(bot, chat_id):
+    help_text = (
+        "Example for deleting filter keywords:\n\n"
+        "/deletefilterrules [your keyword]\n"
+        "The specified keyword(s) will be removed from your filters."
+    )
+    await bot.send_message(chat_id=chat_id, text=help_text)
+
 async def stop_command(bot, chat_id):
     chat_ids = load_chat_ids()
     if str(chat_id) in chat_ids:
@@ -139,27 +105,133 @@ async def stop_command(bot, chat_id):
         save_chat_ids(chat_ids)
         await bot.send_message(chat_id=chat_id, text="Bot stopped. Goodbye!")
 
-
-# Function for the /help command to display all available commands
 async def help_command(bot, chat_id):
-    help_text = "The bot forwards all tweets from #SbahnBerlin #BVG_Bus #BVG_UBahn #BVG_Tram #VIZ_Berlin to the user.\n\n"
-    help_text += "Unless the user uses the bot's filter keyword function. Then only corresponding tweets are forwarded.\n\n"
-    help_text += "/start - Start the bot\n/stop - Stop the bot\n/addfilterrules [rules] - Add filter rules\n/deletefilterrules [rules] - Delete filter rules\n/deleteallrules - Delete all filter rules\n/showallrules - Show all filter rules\n"
-    help_text += "/list - Provides detailed instructions for the add and delete filter functions."
+    help_text = (
+        "This bot forwards tweets according to your filter keywords.\n\n"
+        "Commands:\n"
+        "/start - Start the bot\n"
+        "/stop - Stop the bot\n"
+        "/addfilterrules [rules] - Add filter rules\n"
+        "/deletefilterrules [rules] - Delete filter rules\n"
+        "/deleteallrules - Delete all filter rules\n"
+        "/showallrules - Show your current filter rules\n"
+        "/list - Display examples for adding and deleting filters"
+    )
     await bot.send_message(chat_id=chat_id, text=help_text)
     
-    help_text = "Expert tips:\n"
-    help_text += "\n"
-    help_text += "Multiple keywords can be passed to the bot simultaneously (separated by spaces)\n"
-    help_text += "\n"
-    help_text += "The functions for adding and deleting filter rules support shortened forms of the command.\n"
-    help_text += "\n"
-    help_text += "Example:\n"
-    help_text += "/addrule [your keywords]\n"
-    help_text += "/delrule [your keywords]\n"
+    additional_text = (
+        "Expert Tips:\n"
+        "- You can add multiple keywords separated by spaces.\n"
+        "Examples:\n"
+        "/addfilterrules keyword1 keyword2\n"
+        "/deletefilterrules keyword1 keyword2"
+    )
+    await bot.send_message(chat_id=chat_id, text=additional_text)
+
+async def admin_help(bot, chat_id):
+    help_text = (
+        "Admin Commands:\n"
+        "/send [message] - Broadcasts the message to all users (Telegram and Mastodon)\n"
+        "/me [message] - Sends a test message only to you\n"
+        "/tele [message] - Broadcasts the message to Telegram users\n"
+        "/mast [message] - Broadcasts the message to Mastodon users"
+    )
     await bot.send_message(chat_id=chat_id, text=help_text)
 
-# Function to start the bot
+def service_tweet(message):
+    timestamp = datetime.now().strftime("%d.%m.%Y %H:%M")
+    return [{
+        "user": "Service",
+        "username": "Service",
+        "content": message,
+        "posted_time": timestamp,
+        "source_url": "",
+        "images": "",
+        "extern_urls": "",
+        "images_as_string": "",
+        "extern_urls_as_string": ""
+    }]
+
+def split_service_message(message, max_length=450):
+    parts = []
+    while message:
+        if len(message) <= max_length:
+            parts.append(message)
+            break
+        split_index = message[:max_length].rfind('. ')
+        split_index = split_index + 1 if split_index != -1 else max_length
+        parts.append(message[:split_index].strip())
+        message = message[split_index:].strip()
+    for i in range(len(parts)):
+        parts[i] = f"[Part {i+1}]\n\n{parts[i]}"
+    return parts
+
+def format_text(message):
+    message = message.replace('. ', '.\n')
+    message = message.replace(': ', ':\n')
+    message = message.replace('! ', '!\n')
+    message = message.replace('? ', '?\n')
+    message = message.replace('/n', '\n')
+    return message
+
+async def admin_send_telegram(message):
+    formatted_message = format_text(message)
+    service_message = service_tweet(formatted_message)
+    try:
+        await telegram_bot.main(service_message)
+    except Exception as e:
+        print(e)
+
+def admin_send_mastodon(message):
+    service_message = service_tweet(message)
+    message_str = format_text(service_message[0]["content"])
+    try:
+        if len(message_str) > 470:
+            parts = split_service_message(message_str)
+            for part in parts:
+                mastodon_bot.main(part)
+        else:
+            mastodon_bot.main(message_str)
+    except Exception as e:
+        print(e)
+
+async def admin_send_all(message):
+    formatted_message = format_text(message)
+    service_message = service_tweet(formatted_message)
+    try:
+        await telegram_bot.main(service_message)
+    except Exception as e:
+        print(e)
+    try:
+        message_str = format_text(service_message[0]["content"])
+        if len(message_str) > 470:
+            parts = split_service_message(message_str)
+            for part in parts:
+                mastodon_bot.main(part)
+        else:
+            mastodon_bot.main(message_str)
+    except Exception as e:
+        print(e)
+
+async def admin_send_me(message):
+    message_content = format_text(message)
+    timestamp = datetime.now().strftime("%d.%m.%Y %H:%M")
+    service_message = [{
+        "user": "TestUser",
+        "username": "TestUser",
+        "content": message_content,
+        "posted_time": timestamp,
+        "source_url": "",
+        "images": "",
+        "extern_urls": "",
+        "images_as_string": "",
+        "extern_urls_as_string": ""
+    }]
+    try:
+        await telegram_bot.main(service_message)
+    except Exception as e:
+        print(e)
+
 async def start_bot():
     bot = telegram.Bot(token=BOT_TOKEN)
     update_id = None
@@ -169,7 +241,6 @@ async def start_bot():
             update_id = update.update_id + 1
             await process_update(bot, update)
 
-# Function for processing an update
 async def process_update(bot, update):
     if update.message:
         message = update.message.text
@@ -179,7 +250,7 @@ async def process_update(bot, update):
             await help_command(bot, chat_id)
         elif message.startswith('/stop'):
             await stop_command(bot, chat_id)
-        elif message.startswith('/hilfe'):
+        elif message.startswith('/help'):
             await help_command(bot, chat_id)
         elif message.startswith('/add'):
             await add_filter_rules(bot, message, chat_id)
@@ -190,14 +261,27 @@ async def process_update(bot, update):
         elif message.startswith('/showallrules'):
             await show_all_rules(bot, message, chat_id)
         elif message.startswith('/list'):
-            await add_exempel_command(bot, chat_id)
-            await del_exempel_command(bot, chat_id)
+            await send_add_example(bot, chat_id)
+            await send_delete_example(bot, chat_id)
+        elif message.startswith('/') and chat_id == admin_id:
+            command, *args = message.split()
+            message_content = ' '.join(args)
+            if command == '/me' and message_content:
+                await admin_send_me(message_content)
+            elif command == '/mast' and message_content:
+                admin_send_mastodon(message_content)
+            elif command == '/tele' and message_content:
+                await admin_send_telegram(message_content)
+            elif command == '/send' and message_content:
+                await admin_send_all(message_content)
+            else:
+                await admin_help(bot, chat_id)
         elif message.startswith('/'):
             await help_command(bot, chat_id)
         else:
             await start_command(bot, chat_id)
             await help_command(bot, chat_id)
 
-# Ausführen des Bots
+# ...existing code...
 if __name__ == "__main__":
     asyncio.run(start_bot())
